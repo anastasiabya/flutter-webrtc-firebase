@@ -57,17 +57,6 @@ class Signaling {
     DocumentReference roomRef =
         db.collection('users').doc(userId).collection('rooms').doc();
 
-    var rid = roomRef.id;
-    addRoomIdToCallee(callee, userId, rid);
-
-    // DocumentReference roomRefCallee = db
-    //     .collection('users')
-    //     .doc(callee)
-    //     .collection('calls')
-    //     .doc(userId)
-    //     .collection('rooms')
-    //     .doc(rid);
-
     peerConnection = await createPeerConnection(configuration);
 
     registerPeerConnectionListeners();
@@ -88,8 +77,8 @@ class Signaling {
     Map<String, dynamic> roomWithOffer = {'offer': offer.toMap()};
 
     await roomRef.set(roomWithOffer);
-    //await roomRefCallee.set(roomWithOffer);
-    //addRoomIdToCallee(callee, userId, rid);
+    var rid = roomRef.id;
+    addRoomIdToCallee(callee, userId, rid);
 
     peerConnection?.onTrack = (RTCTrackEvent event) {
       event.streams[0].getTracks().forEach((track) {
@@ -110,19 +99,6 @@ class Signaling {
       }
     });
 
-    // roomRefCallee.snapshots().listen((snapshot) async {
-    //   Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
-    //   if (peerConnection?.getRemoteDescription() != null &&
-    //       data['answer'] != null) {
-    //     var answer = RTCSessionDescription(
-    //       data['answer']['sdp'],
-    //       data['answer']['type'],
-    //     );
-
-    //     await peerConnection?.setRemoteDescription(answer);
-    //   }
-    // });
-
     roomRef.collection('calleeCandidates').snapshots().listen((snapshot) {
       for (var change in snapshot.docChanges) {
         if (change.type == DocumentChangeType.added) {
@@ -137,21 +113,6 @@ class Signaling {
         }
       }
     });
-
-    // roomRefCallee.collection('calleeCandidates').snapshots().listen((snapshot) {
-    //   for (var change in snapshot.docChanges) {
-    //     if (change.type == DocumentChangeType.added) {
-    //       Map<String, dynamic> data = change.doc.data() as Map<String, dynamic>;
-    //       peerConnection!.addCandidate(
-    //         RTCIceCandidate(
-    //           data['candidate'],
-    //           data['sdpMid'],
-    //           data['sdpMLineIndex'],
-    //         ),
-    //       );
-    //     }
-    //   }
-    // });
 
     return rid;
   }
@@ -177,6 +138,9 @@ class Signaling {
 
       var calleeCandidatesCollection = roomRef.collection('calleeCandidates');
       peerConnection!.onIceCandidate = (RTCIceCandidate candidate) {
+        if (candidate == null) {
+          return;
+        }
         calleeCandidatesCollection.add(candidate.toMap());
       };
 

@@ -66,8 +66,6 @@ class _CallsState extends State<Calls> {
         actions: [
           IconButton(
               onPressed: () {
-                //signaling.getRoomId(widget.callee!, widget.caller!);
-                //print(signaling.roomId);
                 signaling.joinRoom(
                     _remoteRenderer, widget.callee!, widget.caller!);
                 _inCalling = true;
@@ -102,10 +100,9 @@ class _CallsState extends State<Calls> {
             signaling.createRoom(
                 _remoteRenderer, widget.callee!, widget.caller!);
             remotes.addLoginCallerToCallee(widget.callee!, widget.caller!);
-            //signaling.addRoomIdToCallee(widget.callee!, widget.caller!);
-            setState(() {});
             _caller = true;
             _inCalling = true;
+            setState(() {});
           }
         },
         child: _inCalling
