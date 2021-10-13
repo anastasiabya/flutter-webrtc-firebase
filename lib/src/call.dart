@@ -24,23 +24,30 @@ class _CallsState extends State<Calls> {
 
   @override
   void initState() {
-    _localRenderer.initialize();
-    _remoteRenderer.initialize();
+    super.initState();
+    initRenders();
 
     signaling.onAddRemoteStream = ((stream) {
       _remoteRenderer.srcObject = stream;
       setState(() {});
     });
     signaling.openUserMedia(_localRenderer, _remoteRenderer);
-
-    super.initState();
   }
 
   @override
-  void dispose() {
+  deactivate() {
+    super.deactivate();
+    _disposeRenderers();
+  }
+
+  void _disposeRenderers() {
     _localRenderer.dispose();
     _remoteRenderer.dispose();
-    super.dispose();
+  }
+
+  void initRenders() async {
+    await _localRenderer.initialize();
+    await _remoteRenderer.initialize();
   }
 
   @override
@@ -69,6 +76,7 @@ class _CallsState extends State<Calls> {
                 signaling.joinRoom(
                     _remoteRenderer, widget.callee!, widget.caller!);
                 _inCalling = true;
+                setState(() {});
               },
               icon: const Icon(Icons.call))
         ],

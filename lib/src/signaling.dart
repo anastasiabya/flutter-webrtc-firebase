@@ -6,13 +6,24 @@ typedef StreamStateCallback = void Function(MediaStream stream);
 class Signaling {
   Map<String, dynamic> configuration = {
     'iceServers': [
-      {
-        'urls': [
-          'stun:stun1.l.google.com:19302',
-          'stun:stun2.l.google.com:19302'
-        ]
-      }
-    ]
+      {'url': 'stun:stun.l.google.com:19302'},
+    ],
+    'sdpSemantics': 'unified-plan'
+  };
+
+  final offerSdpConstraints = <String, dynamic>{
+    'mandatory': {
+      'OfferToReceiveAudio': true,
+      'OfferToReceiveVideo': true,
+    },
+    'optional': [],
+  };
+
+  final loopbackConstraints = <String, dynamic>{
+    'mandatory': {},
+    'optional': [
+      {'DtlsSrtpKeyAgreement': true},
+    ],
   };
 
   RTCPeerConnection? peerConnection;
@@ -57,7 +68,8 @@ class Signaling {
     DocumentReference roomRef =
         db.collection('users').doc(userId).collection('rooms').doc();
 
-    peerConnection = await createPeerConnection(configuration);
+    peerConnection =
+        await createPeerConnection(configuration, loopbackConstraints);
 
     registerPeerConnectionListeners();
 
@@ -138,9 +150,6 @@ class Signaling {
 
       var calleeCandidatesCollection = roomRef.collection('calleeCandidates');
       peerConnection!.onIceCandidate = (RTCIceCandidate candidate) {
-        if (candidate == null) {
-          return;
-        }
         calleeCandidatesCollection.add(candidate.toMap());
       };
 
@@ -184,8 +193,18 @@ class Signaling {
     RTCVideoRenderer localVideo,
     RTCVideoRenderer remoteVideo,
   ) async {
-    var stream = await navigator.mediaDevices
-        .getUserMedia({'video': true, 'audio': false});
+    var stream = await navigator.mediaDevices.getUserMedia({
+      'video': {
+        "mandatory": {
+          "minWidth": '480',
+          "minHeight": '640',
+          "minFrameRate": '30',
+        },
+        "facingMode": "user",
+        "optional": [],
+      },
+      'audio': false
+    });
 
     localVideo.srcObject = stream;
     localStream = stream;
